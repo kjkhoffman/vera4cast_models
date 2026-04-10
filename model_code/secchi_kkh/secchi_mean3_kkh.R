@@ -167,11 +167,20 @@ secchi_forecast <- function(forecast_start,
   # 
 }
 
-forecast_output <- secchi_forecast(forecast_start = as.Date("2026-03-01"),
+forecast_output <- secchi_forecast(forecast_start = as.Date(Sys.Date()),
                                    se_period = 730,
                                    weeks = 4, 
                                    mean_obs = 3,
                                    sites = c("fcre", "bvre"))
+forecast_output <- forecast_output |> mutate(datetime = as.Date(datetime), 
+                                             reference_datetime = as.Date(reference_datetime))
 
-vera4castHelpers::forecast_output_validator(forecast_output)
-vera4castHelpers::submit(forecast_output, s3_region = "submit", s3_endpoint = "ltreb-reservoirs.org", first_submission = FALSE)
+
+forecast_output <- forecast_output |> mutate(datetime = as_date(datetime), 
+                                             reference_datetime = as_date(reference_datetime))
+tmp <- tempfile(fileext = ".csv")
+write_csv(forecast_output, tmp)
+forecast_output_validator(tmp)
+
+vera4castHelpers::forecast_output_validator(tmp)
+vera4castHelpers::submit(tmp, s3_region = "submit", s3_endpoint = "ltreb-reservoirs.org", first_submission = FALSE)
